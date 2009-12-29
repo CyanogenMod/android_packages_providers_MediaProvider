@@ -1486,7 +1486,9 @@ public class MediaProvider extends ContentProvider {
                 long albumRowId;
                 HashMap<String, Long> albumCache = database.mAlbumCache;
                 synchronized(albumCache) {
-                    int albumhash = path.substring(0, path.lastIndexOf('/')).hashCode();
+                    String albumArtist = values.getAsString("album_artist");
+                    values.remove("album_artist"); // Make sure it doesn't get into database!
+                    int albumhash = albumArtist.hashCode();
                     String cacheName = s + albumhash;
                     Long temp = albumCache.get(cacheName);
                     if (temp == null) {
