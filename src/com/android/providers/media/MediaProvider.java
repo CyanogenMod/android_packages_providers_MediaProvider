@@ -1725,7 +1725,6 @@ public class MediaProvider extends ContentProvider {
                 if (rowId > 0) {
                     newUri = ContentUris.withAppendedId(
                             Images.Media.getContentUri(uri.getPathSegments().get(0)), rowId);
-                    requestMediaThumbnail(data, newUri, MediaThumbRequest.PRIORITY_NORMAL, 0);
                 }
                 break;
             }
@@ -1899,7 +1898,6 @@ public class MediaProvider extends ContentProvider {
                 if (rowId > 0) {
                     newUri = ContentUris.withAppendedId(Video.Media.getContentUri(
                             uri.getPathSegments().get(0)), rowId);
-                    requestMediaThumbnail(data, newUri, MediaThumbRequest.PRIORITY_NORMAL, 0);
                 }
                 break;
             }
@@ -2311,27 +2309,6 @@ public class MediaProvider extends ContentProvider {
                         computeTakenTime(values);
                         count = db.update(sGetTableAndWhereParam.table, values,
                                 sGetTableAndWhereParam.where, whereArgs);
-                        // if this is a request from MediaScanner, DATA should contains file path
-                        // we only process update request from media scanner, otherwise the requests
-                        // could be duplicate.
-                        if (count > 0 && values.getAsString(MediaStore.MediaColumns.DATA) != null) {
-                            Cursor c = db.query(sGetTableAndWhereParam.table,
-                                    READY_FLAG_PROJECTION, sGetTableAndWhereParam.where,
-                                    whereArgs, null, null, null);
-                            if (c != null) {
-                                try {
-                                    while (c.moveToNext()) {
-                                        long magic = c.getLong(2);
-                                        if (magic == 0) {
-                                            requestMediaThumbnail(c.getString(1), uri,
-                                                    MediaThumbRequest.PRIORITY_NORMAL, 0);
-                                        }
-                                    }
-                                } finally {
-                                    c.close();
-                                }
-                            }
-                        }
                     }
                     break;
 
