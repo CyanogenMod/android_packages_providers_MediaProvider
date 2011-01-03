@@ -1,6 +1,7 @@
 /* //device/content/providers/media/src/com/android/providers/media/MediaScannerService.java
 **
 ** Copyright 2007, The Android Open Source Project
+** Copyright (c) 2009, Code Aurora Forum. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License"); 
 ** you may not use this file except in compliance with the License. 
@@ -256,9 +257,13 @@ public class MediaScannerService extends Service implements Runnable
                         };
                     }
                     else if (MediaProvider.EXTERNAL_VOLUME.equals(volume)) {
+                        String path = arguments.getString("path");
+                        if (path == null) {
+                            path = Environment.getExternalStorageDirectory().getPath();
+                        }
                         // scan external storage
                         directories = new String[] {
-                                Environment.getExternalStorageDirectory().getPath(),
+                                path,
                                 };
                     }
                     
@@ -266,6 +271,32 @@ public class MediaScannerService extends Service implements Runnable
                         if (Config.LOGD) Log.d(TAG, "start scanning volume " + volume);
                         scan(directories, volume);
                         if (Config.LOGD) Log.d(TAG, "done scanning volume " + volume);
+
+                    }
+
+                    /*
+                     * Scan /data/media now. The scanned media information
+                     * will be stored in external-<fat-vol-id>.db database.
+                     * fat-vol-id will be ffffffff(hex equivalent of -1) for
+                     * /data/media as this is not a FAT volume.
+                     */
+                    if (MediaProvider.INTERNAL_VOLUME.equals(volume)) {
+                        File mediaDir = new File(Environment.getDataDirectory() +
+                                                 "/media");
+                        if (mediaDir.isDirectory()) {
+                            directories = new String[] {
+                                        Environment.getDataDirectory() + "/media"
+                                        };
+                            if (Config.LOGD) {
+                                Log.d(TAG, "start scanning /data/media");
+                            }
+                            scan(directories, MediaProvider.EXTERNAL_VOLUME);
+                            if (Config.LOGD) {
+                                Log.d(TAG, "done scanning /data/media");
+                            }
+                        } else {
+                            Log.d(TAG, "Directory not found: /data/media");
+                        }
                     }
                 }
             } catch (Exception e) {

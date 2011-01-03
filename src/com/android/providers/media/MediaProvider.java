@@ -298,10 +298,16 @@ public class MediaProvider extends ContentProvider {
         iFilter.addDataScheme("file");
         getContext().registerReceiver(mUnmountReceiver, iFilter);
 
-        // open external database if external storage is mounted
+        /*
+         * Open external database if either external storage is mounted
+         * or /data/media folder exists.
+         */
         String state = Environment.getExternalStorageState();
+        File mediaDir = new File(Environment.getDataDirectory() +
+                                 "/media");
         if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state) ||
+                mediaDir.isDirectory()) {
             attachVolume(EXTERNAL_VOLUME);
         }
 
@@ -3026,7 +3032,20 @@ public class MediaProvider extends ContentProvider {
     private DatabaseHelper getDatabaseForUri(Uri uri) {
         synchronized (mDatabases) {
             if (uri.getPathSegments().size() > 1) {
-                return mDatabases.get(uri.getPathSegments().get(0));
+                String dbKey = uri.getPathSegments().get(0);
+                /*
+                 * For external uri, if the sdcard is mounted,
+                 * the dbKey would be external-<fatVolumeId>.
+                 * Otherwise, the dbKey would be external-ffffff.
+                 * Information related to media files on /data/media
+                 * is stored in external-ffffff.db.
+                 */
+                if (dbKey.equals(EXTERNAL_VOLUME)) {
+                    String path = Environment.getExternalStorageDirectory().getPath();
+                    int volumeId = FileUtils.getFatVolumeId(path);
+                    dbKey = EXTERNAL_VOLUME + "-" + Integer.toHexString(volumeId);
+                }
+                return mDatabases.get(dbKey);
             }
         }
         return null;
@@ -3047,7 +3066,25 @@ public class MediaProvider extends ContentProvider {
         }
 
         synchronized (mDatabases) {
-            if (mDatabases.get(volume) != null) {  // Already attached
+            String dbKey = volume;
+
+            /*
+             * For internal volume, dbKey would be volume name.
+             * For external volumes (sdcard), dbKey would be
+             * external-<fat-vol-id>. For /data/media, dbKey would
+             * be external-ffffffff.
+             */
+            if (EXTERNAL_VOLUME.equals(volume)) {
+                String path = Environment.getExternalStorageDirectory().getPath();
+                int volumeID = FileUtils.getFatVolumeId(path);
+                if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
+
+                // generate database name based on volume ID
+                dbKey = EXTERNAL_VOLUME + "-" + Integer.toHexString(volumeID);
+                mVolumeId = volumeID;
+            }
+
+            if (mDatabases.get(dbKey) != null) {  // Already attached
                 return Uri.parse("content://media/" + volume);
             }
 
@@ -3055,19 +3092,13 @@ public class MediaProvider extends ContentProvider {
             if (INTERNAL_VOLUME.equals(volume)) {
                 db = new DatabaseHelper(getContext(), INTERNAL_DATABASE_NAME, true);
             } else if (EXTERNAL_VOLUME.equals(volume)) {
-                String path = Environment.getExternalStorageDirectory().getPath();
-                int volumeID = FileUtils.getFatVolumeId(path);
-                if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
-
-                // generate database name based on volume ID
-                String dbName = "external-" + Integer.toHexString(volumeID) + ".db";
-                db = new DatabaseHelper(getContext(), dbName, false);
-                mVolumeId = volumeID;
+                db = new DatabaseHelper(getContext(), dbKey + ".db" , false);
             } else {
                 throw new IllegalArgumentException("There is no volume named " + volume);
             }
 
-            mDatabases.put(volume, db);
+            // dbKey is the key for the database handle
+            mDatabases.put(dbKey, db);
 
             if (!db.mInternal) {
                 // clean up stray album art files: delete every file not in the database
@@ -3116,16 +3147,28 @@ public class MediaProvider extends ContentProvider {
         }
 
         String volume = uri.getPathSegments().get(0);
+        String dbKey = volume;
+
         if (INTERNAL_VOLUME.equals(volume)) {
             throw new UnsupportedOperationException(
                     "Deleting the internal volume is not allowed");
-        } else if (!EXTERNAL_VOLUME.equals(volume)) {
+        } else if (EXTERNAL_VOLUME.equals(volume)) {
+            /*
+             * Database key for external volume is based on the volume name and
+             * volume id. For /data/media, the volume id returned by
+             * getFatVolumeId would be -1 and hence the dbKey external-ffffffff.
+             * For sdcard, dbKey would be external-<fat volume id>.
+             */
+            String path = Environment.getExternalStorageDirectory().getPath();
+            int volumeId = FileUtils.getFatVolumeId(path);
+            dbKey = EXTERNAL_VOLUME + "-" + Integer.toHexString(volumeId);
+        } else {
             throw new IllegalArgumentException(
                     "There is no volume named " + volume);
         }
 
         synchronized (mDatabases) {
-            DatabaseHelper database = mDatabases.get(volume);
+            DatabaseHelper database = mDatabases.get(dbKey);
             if (database == null) return;
 
             try {
@@ -3136,7 +3179,7 @@ public class MediaProvider extends ContentProvider {
                 Log.e(TAG, "Can't touch database file", e);
             }
 
-            mDatabases.remove(volume);
+            mDatabases.remove(dbKey);
             database.close();
         }
 
