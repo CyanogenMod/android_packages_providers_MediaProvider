@@ -2828,7 +2828,7 @@ public class MediaProvider extends ContentProvider {
             // same directory as the media file, except if that directory is
             // is the root directory of the sd card or the download directory.
             // We look for, in order of preference:
-            // 0 AlbumArt.jpg
+            // 0 AlbumArt.jpg or *cover* or *front*
             // 1 AlbumArt*Large.jpg
             // 2 Any other jpg image with 'albumart' anywhere in the name
             // 3 Any other jpg image
@@ -2857,7 +2857,9 @@ public class MediaProvider extends ContentProvider {
                             int matchlevel = 1000;
                             for (int i = entrynames.length - 1; i >=0; i--) {
                                 String entry = entrynames[i].toLowerCase();
-                                if (entry.equals("albumart.jpg")) {
+                                if (entry.equals("albumart.jpg")
+                                        || entry.contains("cover")
+                                        || entry.contains("front")) {
                                     bestmatch = entrynames[i];
                                     break;
                                 } else if (entry.startsWith("albumart")
