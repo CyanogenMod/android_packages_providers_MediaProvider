@@ -54,6 +54,9 @@ public class MediaScannerService extends Service implements Runnable
     private volatile ServiceHandler mServiceHandler;
     private PowerManager.WakeLock mWakeLock;
     private String[] mExternalStoragePaths;
+
+    private static final int MSG_SCAN_EXTERNAL = 0;
+    private static final int MSG_SCAN_OTHER = 1;
     
     private void openDatabase(String volumeName) {
         try {
@@ -145,10 +148,41 @@ public class MediaScannerService extends Service implements Runnable
             return Service.START_NOT_STICKY;
         }
 
+        boolean isExternal = MediaProvider.EXTERNAL_VOLUME.equals(intent.getStringExtra("volume"));
+
         Message msg = mServiceHandler.obtainMessage();
+        msg.what = isExternal ? MSG_SCAN_EXTERNAL : MSG_SCAN_OTHER;
         msg.arg1 = startId;
         msg.obj = intent.getExtras();
-        mServiceHandler.sendMessage(msg);
+
+        // For devices with multiple external storage, delay the media scan
+        // a bit to allow for all external storages to be mounted.
+        // This prevents files from being removed due to an unmounted folder
+        // being scanned.
+        if (isExternal && mExternalStoragePaths.length > 1) {
+            boolean sendMsg = true;
+
+            // Don't send message if there's already a delayed message pending
+            if (mServiceHandler.hasMessages(MSG_SCAN_EXTERNAL)) {
+                sendMsg = false;
+            }
+
+            // Don't send message if another storage is being checked, let
+            // start scanning when that storage is finished checking.
+            // This happens when booting where android takes different time
+            // to run fsck on each partition.
+            for (String path : mExternalStoragePaths) {
+                if (Environment.MEDIA_CHECKING.equals(Environment.getExternalStorageState(path))) {
+                    sendMsg = false;
+                }
+            }
+
+            if (sendMsg) {
+                mServiceHandler.sendMessageDelayed(msg, 3000);
+            }
+        } else {
+            mServiceHandler.sendMessage(msg);
+        }
 
         // Try again later if we are killed before we can finish scanning.
         return Service.START_REDELIVER_INTENT;
