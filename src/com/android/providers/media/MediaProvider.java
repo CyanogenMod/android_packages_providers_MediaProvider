@@ -2858,8 +2858,8 @@ public class MediaProvider extends ContentProvider {
                             for (int i = entrynames.length - 1; i >=0; i--) {
                                 String entry = entrynames[i].toLowerCase();
                                 if (entry.equals("albumart.jpg")
-                                        || entry.contains("cover")
-                                        || entry.contains("front")) {
+                                        || ((entry.contains("cover") || entry.contains("front"))
+                                            && (entry.endsWith(".jpg") || entry.endsWith(".png")))) {
                                     bestmatch = entrynames[i];
                                     break;
                                 } else if (entry.startsWith("albumart")
