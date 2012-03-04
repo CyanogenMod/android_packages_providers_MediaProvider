@@ -100,6 +100,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.PriorityQueue;
+import java.util.regex.Pattern;
 import java.util.Stack;
 
 import libcore.io.ErrnoException;
@@ -322,6 +323,9 @@ public class MediaProvider extends ContentProvider {
      * on demand, create and upgrade the schema, etc.
      */
     static final class DatabaseHelper extends SQLiteOpenHelper {
+        // Matches SQLite database temporary files.
+        private static final Pattern DB_TMPFILE_PAT = Pattern.compile("\\.db-\\w+\\z");
+
         final Context mContext;
         final String mName;
         final boolean mInternal;  // True if this is the internal database
@@ -426,6 +430,13 @@ public class MediaProvider extends ContentProvider {
             // delete external databases that have not been used in the past two months
             long twoMonthsAgo = now - OBSOLETE_DATABASE_DB;
             for (int i = 0; i < databases.length; i++) {
+                // Remove SQLite temporary files as they don't count as distinct databases.
+                if (DB_TMPFILE_PAT.matcher(databases[i]).find()) {
+                    databases[i] = null;
+                    count--;
+                    continue;
+                }
+
                 File other = mContext.getDatabasePath(databases[i]);
                 if (INTERNAL_DATABASE_NAME.equals(databases[i]) || file.equals(other)) {
                     databases[i] = null;
