@@ -1,0 +1,11 @@
+Change-Id: I6892e3b47fd2751dd60d3e47c0cd6c3f2677fabd
+Code-Review+2: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
+Verified+1: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
+Code-Review+2: Steve Kondik <shade@chemlab.org>
+Verified+1: Steve Kondik <shade@chemlab.org>
+Code-Review+1: XpLoDWilD <xplodgui@gmail.com>
+Submitted-by: Steve Kondik <shade@chemlab.org>
+Submitted-at: Fri, 09 Mar 2012 09:36:04 +0300
+Reviewed-on: http://review.cyanogenmod.com/13251
+Project: CyanogenMod/android_packages_providers_MediaProvider
+Branch: refs/heads/ics
