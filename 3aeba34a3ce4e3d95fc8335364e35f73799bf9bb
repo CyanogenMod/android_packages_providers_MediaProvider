@@ -1,0 +1,8 @@
+Change-Id: I3aeba34a3ce4e3d95fc8335364e35f73799bf9bb
+Code-Review+2: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
+Verified+1: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
+Submitted-by: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
+Submitted-at: Mon, 12 Mar 2012 19:06:55 +0300
+Reviewed-on: http://review.cyanogenmod.com/13524
+Project: CyanogenMod/android_packages_providers_MediaProvider
+Branch: refs/heads/gingerbread
