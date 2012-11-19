@@ -271,9 +271,13 @@ public class MediaProvider extends ContentProvider {
                                 values.put(Files.FileColumns.DATA, "");
                                 String where = FileColumns.STORAGE_ID + "=?";
                                 String[] whereArgs = new String[] { Integer.toString(storage.getStorageId()) };
+                                database.mNumUpdates++;
                                 db.update("files", values, where, whereArgs);
                                 // now delete the records
-                                db.delete("files", where, whereArgs);
+                                database.mNumDeletes++;
+                                int numpurged = db.delete("files", where, whereArgs);
+                                logToDb(db, "removed " + numpurged +
+                                        " rows for ejected filesystem " + storage.getPath());
                                 // notify on media Uris as well as the files Uri
                                 context.getContentResolver().notifyChange(
                                         Audio.Media.getContentUri(EXTERNAL_VOLUME), null);
@@ -656,6 +660,11 @@ public class MediaProvider extends ContentProvider {
 
         return true;
     }
+
+    private static final String TABLE_FILES = "files";
+    private static final String TABLE_ALBUM_ART = "album_art";
+    private static final String TABLE_THUMBNAILS = "thumbnails";
+    private static final String TABLE_VIDEO_THUMBNAILS = "videothumbnails";
 
     private static final String IMAGE_COLUMNS =
                         "_data,_size,_display_name,mime_type,title,date_added," +
@@ -1741,6 +1750,25 @@ public class MediaProvider extends ContentProvider {
         if (fromVersion < 509) {
             db.execSQL("CREATE TABLE IF NOT EXISTS log (time DATETIME PRIMARY KEY, message TEXT);");
         }
+
+        // Emulated external storage moved to user-specific paths
+        if (fromVersion < 510 && Environment.isExternalStorageEmulated()) {
+            // File.fixSlashes() removes any trailing slashes
+            final String externalStorage = Environment.getExternalStorageDirectory().toString();
+            Log.d(TAG, "Adjusting external storage paths to: " + externalStorage);
+
+            final String[] tables = {
+                    TABLE_FILES, TABLE_ALBUM_ART, TABLE_THUMBNAILS, TABLE_VIDEO_THUMBNAILS };
+            for (String table : tables) {
+                db.execSQL("UPDATE " + table + " SET " + "_data='" + externalStorage
+                        + "'||SUBSTR(_data,17) WHERE _data LIKE '/storage/sdcard0/%';");
+            }
+        }
+        if (fromVersion < 511) {
+            // we update _data in version 510, we need to update the bucket_id as well
+            updateBucketNames(db);
+        }
+
         sanityCheck(db, fromVersion);
         long elapsedSeconds = (SystemClock.currentTimeMicro() - startTime) / 1000000;
         logToDb(db, "Database upgraded from version " + fromVersion + " to " + toVersion
@@ -1751,7 +1779,7 @@ public class MediaProvider extends ContentProvider {
      * Write a persistent diagnostic message to the log table.
      */
     static void logToDb(SQLiteDatabase db, String message) {
-        db.execSQL("INSERT INTO log (time, message) VALUES (datetime('now'),?);",
+        db.execSQL("INSERT INTO log (time,message) VALUES (strftime('%Y-%m-%d %H:%M:%f','now'),?);",
                 new String[] { message });
         // delete all but the last 500 rows
         db.execSQL("DELETE FROM log WHERE rowid IN" +
@@ -3825,6 +3853,7 @@ public class MediaProvider extends ContentProvider {
                             } else if (mediatype == FileColumns.MEDIA_TYPE_AUDIO) {
                                 if (!database.mInternal) {
                                     idvalue[0] =  "" + c.getLong(2);
+                                    database.mNumDeletes += 2; // also count the one below
                                     db.delete("audio_genres_map", "audio_id=?", idvalue);
                                     // for each playlist that the item appears in, move
                                     // all the items behind it forward by one
@@ -3834,6 +3863,7 @@ public class MediaProvider extends ContentProvider {
                                     while (cc.moveToNext()) {
                                         playlistvalues[0] = "" + cc.getLong(0);
                                         playlistvalues[1] = "" + cc.getInt(1);
+                                        database.mNumUpdates++;
                                         db.execSQL("UPDATE audio_playlists_map" +
                                                 " SET play_order=play_order-1" +
                                                 " WHERE playlist_id=? AND play_order>?",
@@ -3971,11 +4001,18 @@ public class MediaProvider extends ContentProvider {
                         count = db.update(sGetTableAndWhereParam.table, initialValues,
                                 sGetTableAndWhereParam.where, whereArgs);
                         if (count > 0) {
-                            // then update the paths of any files and folders contained in the directory.
+                            // update the paths of any files and folders contained in the directory
                             Object[] bindArgs = new Object[] {newPath, oldPath.length() + 1,
-                                    oldPath + "/%", (oldPath.length() + 1), oldPath + "/"};
+                                    oldPath + "/%", (oldPath.length() + 1), oldPath + "/",
+                                    // update bucket_display_name and bucket_id based on new path
+                                    f.getName(),
+                                    f.toString().toLowerCase().hashCode()
+                                    };
                             helper.mNumUpdates++;
                             db.execSQL("UPDATE files SET _data=?1||SUBSTR(_data, ?2)" +
+                                    // also update bucket_display_name
+                                    ",bucket_display_name=?6" +
+                                    ",bucket_id=?7" +
                                     // the "like" test makes use of the index, while the lower()
                                     // test ensures it doesn't match entries it shouldn't when the
                                     // path contains sqlite wildcards
