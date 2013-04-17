@@ -49,6 +49,10 @@
 
         <receiver android:name="MediaScannerReceiver">
             <intent-filter>
+                <action android:name="com.android.providers.media.SCAN_ALL" />
+                <action android:name="com.android.providers.media.DISMISS_SCAN" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
             <intent-filter>
