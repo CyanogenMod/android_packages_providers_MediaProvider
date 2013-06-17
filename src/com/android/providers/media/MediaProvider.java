@@ -4962,13 +4962,21 @@ public class MediaProvider extends ContentProvider {
                 if (Environment.isExternalStorageRemovable()) {
                     String path = mExternalStoragePaths[0];
                     int volumeID = FileUtils.getFatVolumeId(path);
-                    if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
+                    //if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
+                    Log.e(TAG, path + " volume ID: " + volumeID);
+
+                    // In case of a non-FAT filesystem, try to get the UUID
+                    if (volumeID == -1) {
+                        volumeID = FileUtils.getVolumeUUID(path);
+                        // if (LOCAL_LOGV) Log.v(TAG, path + " UUID: " + volumeID);
+                        Log.e(TAG, path + " UUID: " + volumeID);
+                    }
 
                     // Must check for failure!
                     // If the volume is not (yet) mounted, this will create a new
                     // external-ffffffff.db database instead of the one we expect.  Then, if
                     // android.process.media is later killed and respawned, the real external
-                    // database will be attached, containing stale records, or worse, be empty.
+                    // database will be attached, containing stale records, or worse, be empty.                  
                     if (volumeID == -1) {
                         String state = Environment.getExternalStorageState();
                         if (Environment.MEDIA_MOUNTED.equals(state) ||
