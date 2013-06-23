@@ -186,13 +186,18 @@ public class MediaScannerService extends Service implements Runnable
         Looper.loop();
     }
    
-    private Uri scanFile(String path, String mimeType) {
+    private Uri scanFileOrDirectory(String path, String mimeType) {
         String volumeName = MediaProvider.EXTERNAL_VOLUME;
         openDatabase(volumeName);
         MediaScanner scanner = createMediaScanner();
         try {
             // make sure the file path is in canonical form
-            String canonicalPath = new File(path).getCanonicalPath();
+            File file = new File(path);
+            String canonicalPath = file.getCanonicalPath();
+            if (file.isDirectory()) {
+                scanner.scanDirectories(new String[]{canonicalPath}, volumeName);
+                return Uri.fromFile(file);
+            }
             return scanner.scanSingleFile(canonicalPath, volumeName, mimeType);
         } catch (Exception e) {
             Log.e(TAG, "bad path " + path + " in scanFile()", e);
@@ -243,7 +248,7 @@ public class MediaScannerService extends Service implements Runnable
                             (binder == null ? null : IMediaScannerListener.Stub.asInterface(binder));
                     Uri uri = null;
                     try {
-                        uri = scanFile(filePath, arguments.getString("mimetype"));
+                        uri = scanFileOrDirectory(filePath, arguments.getString("mimetype"));
                     } catch (Exception e) {
                         Log.e(TAG, "Exception scanning file", e);
                     }
