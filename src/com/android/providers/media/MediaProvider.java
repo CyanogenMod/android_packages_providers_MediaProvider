@@ -4962,7 +4962,15 @@ public class MediaProvider extends ContentProvider {
                 if (Environment.isExternalStorageRemovable()) {
                     String path = mExternalStoragePaths[0];
                     int volumeID = FileUtils.getFatVolumeId(path);
-                    if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
+                    //if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
+                    Log.e(TAG, path + " volume ID: " + volumeID);
+
+                    // In case of a non-FAT filesystem, try to get the UUID
+                    if (volumeID == -1) {
+                        volumeID = FileUtils.getVolumeUUID(path);
+                        // if (LOCAL_LOGV) Log.v(TAG, path + " UUID: " + volumeID);
+                        Log.e(TAG, path + " UUID: " + volumeID);
+                    }
 
                     // Must check for failure!
                     // If the volume is not (yet) mounted, this will create a new
