@@ -1858,6 +1858,17 @@ public class MediaProvider extends ContentProvider {
                     + " AND datetaken<date_modified*5;");
         }
 
+        if (fromVersion < 701) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS bookmarks (" +
+                " _id INTEGER PRIMARY KEY," +
+                " _data TEXT," +
+                " _display_name TEXT," +
+                " position INTEGER," +
+                " date_added INTEGER," +
+                " mime_type TEXT," +
+                " media_type TEXT" +
+                ");");
+        }
 
         sanityCheck(db, fromVersion);
         long elapsedSeconds = (SystemClock.currentTimeMicro() - startTime) / 1000000;
@@ -2646,6 +2657,13 @@ public class MediaProvider extends ContentProvider {
             case MTP_OBJECT_REFERENCES:
                 int handle = Integer.parseInt(uri.getPathSegments().get(2));
                 return getObjectReferences(helper, db, handle);
+            case MEDIA_BOOKMARK:
+                qb.setTables("bookmarks");
+                break;
+            case MEDIA_BOOKMARK_ID:
+                qb.setTables("bookmarks");
+                qb.appendWhere("_id = " + uri.getPathSegments().get(2));
+                break;
 
             default:
                 throw new IllegalStateException("Unknown URL: " + uri.toString());
@@ -3622,6 +3640,13 @@ public class MediaProvider extends ContentProvider {
                 }
                 break;
 
+            case MEDIA_BOOKMARK:
+                rowId = db.insert("bookmarks", "mime_type", initialValues);
+                if (rowId > 0) {
+                    newUri = ContentUris.withAppendedId(uri, rowId);
+                }
+                break;
+
             default:
                 throw new UnsupportedOperationException("Invalid URI " + uri);
         }
@@ -3940,6 +3965,12 @@ public class MediaProvider extends ContentProvider {
             case FILES:
             case MTP_OBJECTS:
                 out.table = "files";
+                break;
+            case MEDIA_BOOKMARK_ID:
+                where = "_id=" + uri.getPathSegments().get(2);
+                // fall through
+            case MEDIA_BOOKMARK:
+                out.table = "bookmarks";
                 break;
 
             default:
@@ -5537,6 +5568,9 @@ public class MediaProvider extends ContentProvider {
     // when MTP is connected and disconnected
     private static final int MTP_CONNECTED = 705;
 
+    private static final int MEDIA_BOOKMARK = 1101;
+    private static final int MEDIA_BOOKMARK_ID = 1102;
+
     private static final UriMatcher URI_MATCHER =
             new UriMatcher(UriMatcher.NO_MATCH);
 
@@ -5636,6 +5670,8 @@ public class MediaProvider extends ContentProvider {
         // used by the music app's search activity
         URI_MATCHER.addURI("media", "*/audio/search/fancy", AUDIO_SEARCH_FANCY);
         URI_MATCHER.addURI("media", "*/audio/search/fancy/*", AUDIO_SEARCH_FANCY);
+        URI_MATCHER.addURI("media", "*/bookmark", MEDIA_BOOKMARK);
+        URI_MATCHER.addURI("media", "*/bookmark/#", MEDIA_BOOKMARK_ID);
     }
 
     private static String getVolumeName(Uri uri) {
