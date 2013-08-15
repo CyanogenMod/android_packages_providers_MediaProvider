@@ -230,6 +230,14 @@ public class MtpService extends Service {
                 }
             }
         }
+
+        public void sendObjectUpdated(int objectHandle) {
+            synchronized (mBinder) {
+                if (mServer != null) {
+                    mServer.sendObjectUpdated(objectHandle);
+                }
+            }
+        }
     };
 
     @Override
