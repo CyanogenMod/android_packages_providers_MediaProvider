@@ -20,4 +20,10 @@
     <string name="app_label" msgid="581696352855930028">"حافظه رسانه"</string>
     <string name="upgrade_msg" msgid="4093462661265175619">"ارتقا پایگاه داده رسانه."</string>
     <string name="artist_label" msgid="1181678850424271227">"هنرمند"</string>
+    <string name="ringtone_default" msgid="3332469542084549546">"آهنگ زنگ پیش‌فرض"</string>
+    <string name="notification_sound_default" msgid="5309766396223094324">"صدای اعلان پیش‌فرض"</string>
+    <string name="alarm_sound_default" msgid="6854264112790616066">"آهنگ زنگ پیش‌فرض"</string>
+    <string name="root_images" msgid="7098113056247445324">"تصاویر"</string>
+    <string name="root_videos" msgid="3304457332406057833">"ویدیوها"</string>
+    <string name="root_audio" msgid="7177565505195715659">"صدا"</string>
 </resources>

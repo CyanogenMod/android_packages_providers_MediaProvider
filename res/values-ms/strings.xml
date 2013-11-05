@@ -20,4 +20,9 @@
     <string name="app_label" msgid="581696352855930028">"Storan Media"</string>
     <string name="upgrade_msg" msgid="4093462661265175619">"Menaiktaraf pangkalan data Media."</string>
     <string name="artist_label" msgid="1181678850424271227">"Artis"</string>
+    <string name="ringtone_default" msgid="3332469542084549546">"Nada dering lalai"</string>
+    <string name="notification_sound_default" msgid="5309766396223094324">"Bunyi pemberitahuan lalai"</string>
+    <string name="alarm_sound_default" msgid="6854264112790616066">"Bunyi penggera lalai"</string>
+    <string name="root_images" msgid="7098113056247445324">"Imej"</string>
+    <string name="root_music" msgid="4663573634162145060">"Muzik"</string>
 </resources>
