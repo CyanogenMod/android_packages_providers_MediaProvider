@@ -5255,6 +5255,24 @@ public class MediaProvider extends ContentProvider {
                         Log.e(TAG, path + " UUID: " + volumeID);
                     }
 
+                    // HACK: Kitkat switched to fuse managed sdcards so the
+                    // path (/storage/sdcard0) is actually the fuse mountpoint.
+                    // hence it /always/ fails. I originally tried reading
+                    // /mnt/media_rw/sdcard0 but even mounted 777 MediaProvider
+                    // couldn't read it? So as a workaround have vold set a
+                    // system prop containing the volumeId so we can read it here.
+                    if (volumeID == -1) {
+                        Log.w(TAG, "getFatVolumeId() failed...");
+                        // Vold sets prop based on label. That /should/ be the mount dir.
+                        String volumeProp = "sys.storage.volumeid-" +
+                            path.substring(path.lastIndexOf('/')+1);
+                        String propVolumeID = SystemProperties.get(volumeProp);
+                        Log.w(TAG, "Read " + volumeProp + " volumeID=" + propVolumeID);
+                        if (!"".equals(propVolumeID)) {
+                            volumeID = Integer.valueOf(propVolumeID);
+                        }
+                    }
+
                     // Must check for failure!
                     // If the volume is not (yet) mounted, this will create a new
                     // external-ffffffff.db database instead of the one we expect.  Then, if
