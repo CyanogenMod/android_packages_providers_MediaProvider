@@ -129,15 +129,20 @@ public class MediaProvider extends ContentProvider {
     private static final String sExternalPath;
     /** Resolved canonical path to cache storage. */
     private static final String sCachePath;
+    /** Resolved canonical path to legacy storage. */
+    private static final String sLegacyPath;
 
     static {
         try {
             sExternalPath = Environment.getExternalStorageDirectory().getCanonicalPath();
             sCachePath = Environment.getDownloadCacheDirectory().getCanonicalPath();
+            sLegacyPath = Environment.getLegacyExternalStorageDirectory().getCanonicalPath();
         } catch (IOException e) {
             throw new RuntimeException("Unable to resolve canonical paths", e);
         }
     }
+
+    private StorageManager mStorageManager;
 
     // In memory cache of path<->id mappings, to speed up inserts during media scan
     HashMap<String, Long> mDirectoryCache = new HashMap<String, Long>();
@@ -563,6 +568,8 @@ public class MediaProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         final Context context = getContext();
+
+        mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
 
         sArtistAlbumsMap.put(MediaStore.Audio.Albums._ID, "audio.album_id AS " +
                 MediaStore.Audio.Albums._ID);
@@ -4183,8 +4190,11 @@ public class MediaProvider extends ContentProvider {
                                 sGetTableAndWhereParam.where, whereArgs);
                         if (count > 0) {
                             // update the paths of any files and folders contained in the directory
-                            Object[] bindArgs = new Object[] {newPath, oldPath.length() + 1,
-                                    oldPath + "/", oldPath + "0",
+                            Object[] bindArgs = new Object[] {
+                                    newPath,
+                                    oldPath.length() + 1,
+                                    oldPath + "/",
+                                    oldPath + "0",
                                     // update bucket_display_name and bucket_id based on new path
                                     f.getName(),
                                     f.toString().toLowerCase().hashCode()
@@ -4192,8 +4202,8 @@ public class MediaProvider extends ContentProvider {
                             helper.mNumUpdates++;
                             db.execSQL("UPDATE files SET _data=?1||SUBSTR(_data, ?2)" +
                                     // also update bucket_display_name
-                                    ",bucket_display_name=?6" +
-                                    ",bucket_id=?7" +
+                                    ",bucket_display_name=?5" +
+                                    ",bucket_id=?6" +
                                     " WHERE _data >= ?3 AND _data < ?4;",
                                     bindArgs);
                         }
@@ -4614,10 +4624,13 @@ public class MediaProvider extends ContentProvider {
             throw new IllegalArgumentException("Unable to resolve canonical path for " + file, e);
         }
 
-        if (path.startsWith(sExternalPath)) {
-            Context c = getContext();
-            if (c.checkCallingOrSelfUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    != PackageManager.PERMISSION_GRANTED) {
+        Context c = getContext();
+        boolean readGranted =
+                (c.checkCallingOrSelfUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                == PackageManager.PERMISSION_GRANTED);
+
+        if (path.startsWith(sExternalPath) || path.startsWith(sLegacyPath)) {
+            if (!readGranted) {
                 c.enforceCallingOrSelfPermission(
                         READ_EXTERNAL_STORAGE, "External path: " + path);
             }
@@ -4631,15 +4644,19 @@ public class MediaProvider extends ContentProvider {
             }
 
         } else if (path.startsWith(sCachePath)) {
-            getContext().enforceCallingOrSelfPermission(
-                    ACCESS_CACHE_FILESYSTEM, "Cache path: " + path);
+            if (!readGranted) {
+                c.enforceCallingOrSelfPermission(
+                        ACCESS_CACHE_FILESYSTEM, "Cache path: " + path);
+            }
         } else if (isWrite) {
             // don't write to non-cache, non-sdcard files.
             throw new FileNotFoundException("Can't access " + file);
         } else if (isSecondaryExternalPath(path)) {
             // read access is OK with the appropriate permission
-            getContext().enforceCallingOrSelfPermission(
-                    READ_EXTERNAL_STORAGE, "External path: " + path);
+            if (!readGranted) {
+                c.enforceCallingOrSelfPermission(
+                        READ_EXTERNAL_STORAGE, "External path: " + path);
+            }
         } else {
             checkWorldReadAccess(path);
         }
@@ -5243,16 +5260,15 @@ public class MediaProvider extends ContentProvider {
                         false, mObjectRemovedCallback);
             } else if (EXTERNAL_VOLUME.equals(volume)) {
                 if (Environment.isExternalStorageRemovable()) {
+                    final StorageVolume actualVolume = mStorageManager.getPrimaryVolume();
                     String path = mExternalStoragePaths[0];
-                    int volumeID = FileUtils.getFatVolumeId(path);
-                    //if (LOCAL_LOGV) Log.v(TAG, path + " volume ID: " + volumeID);
-                    Log.e(TAG, path + " volume ID: " + volumeID);
+                    int volumeId = actualVolume.getFatVolumeId();
 
                     // In case of a non-FAT filesystem, try to get the UUID
-                    if (volumeID == -1) {
-                        volumeID = FileUtils.getVolumeUUID(path);
+                    if (volumeId == -1) {
+                        volumeId = FileUtils.getVolumeUUID(path);
                         // if (LOCAL_LOGV) Log.v(TAG, path + " UUID: " + volumeID);
-                        Log.e(TAG, path + " UUID: " + volumeID);
+                        Log.e(TAG, path + " UUID: " + volumeId);
                     }
 
                     // Must check for failure!
@@ -5260,7 +5276,7 @@ public class MediaProvider extends ContentProvider {
                     // external-ffffffff.db database instead of the one we expect.  Then, if
                     // android.process.media is later killed and respawned, the real external
                     // database will be attached, containing stale records, or worse, be empty.
-                    if (volumeID == -1) {
+                    if (volumeId == -1) {
                         String state = Environment.getExternalStorageState();
                         if (Environment.MEDIA_MOUNTED.equals(state) ||
                                 Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
@@ -5279,10 +5295,10 @@ public class MediaProvider extends ContentProvider {
                     }
 
                     // generate database name based on volume ID
-                    String dbName = "external-" + Integer.toHexString(volumeID) + ".db";
+                    String dbName = "external-" + Integer.toHexString(volumeId) + ".db";
                     helper = new DatabaseHelper(context, dbName, false,
                             false, mObjectRemovedCallback);
-                    mVolumeId = volumeID;
+                    mVolumeId = volumeId;
                 } else {
                     // external database name should be EXTERNAL_DATABASE_NAME
                     // however earlier releases used the external-XXXXXXXX.db naming
