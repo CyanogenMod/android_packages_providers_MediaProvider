@@ -4629,7 +4629,8 @@ public class MediaProvider extends ContentProvider {
                 (c.checkCallingOrSelfUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 == PackageManager.PERMISSION_GRANTED);
 
-        if (path.startsWith(sExternalPath) || path.startsWith(sLegacyPath)) {
+        if (path.startsWith(sExternalPath) || path.startsWith(sLegacyPath)
+                || isSecondaryExternalPath(path)) {
             if (!readGranted) {
                 c.enforceCallingOrSelfPermission(
                         READ_EXTERNAL_STORAGE, "External path: " + path);
@@ -4651,12 +4652,6 @@ public class MediaProvider extends ContentProvider {
         } else if (isWrite) {
             // don't write to non-cache, non-sdcard files.
             throw new FileNotFoundException("Can't access " + file);
-        } else if (isSecondaryExternalPath(path)) {
-            // read access is OK with the appropriate permission
-            if (!readGranted) {
-                c.enforceCallingOrSelfPermission(
-                        READ_EXTERNAL_STORAGE, "External path: " + path);
-            }
         } else {
             checkWorldReadAccess(path);
         }
