@@ -349,6 +349,12 @@ public final class RingtonePickerActivity extends AlertActivity implements
     }
 
     @Override
+    public void startManagingCursor(Cursor c) {
+       // Do nothing here
+       // We just don't want the Activity.java to manage the cursor
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         if (!isChangingConfigurations()) {
