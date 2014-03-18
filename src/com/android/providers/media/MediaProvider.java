@@ -2610,6 +2610,20 @@ public class MediaProvider extends ContentProvider {
                 qb.appendWhere("album_id=?");
                 prependArgs.add(uri.getPathSegments().get(3));
                 break;
+            case AUDIO_FOLDER:
+                Cursor folderList = db
+                        .rawQuery(
+                                "SELECT count(*),_id,_data,parent FROM files WHERE is_music = 1 GROUP BY parent",
+                                null);
+                return folderList;
+            case AUDIO_FOLDER_ID:
+                String parent = uri.getPathSegments().get(3);
+                Cursor musicInFolder = db.rawQuery(
+                        "SELECT artists.artist,_id,is_music,parent,title,album,duration FROM files,artists "
+                                +
+                                "WHERE is_music = 1 AND parent = '" + parent +
+                                "' AND files.artist_id = artists.artist_id", null);
+                return musicInFolder;
 
             case AUDIO_SEARCH_LEGACY:
                 Log.w(TAG, "Legacy media search Uri used. Please update your code.");
@@ -5492,6 +5506,8 @@ public class MediaProvider extends ContentProvider {
     private static final int AUDIO_ALBUMART = 119;
     private static final int AUDIO_ALBUMART_ID = 120;
     private static final int AUDIO_ALBUMART_FILE_ID = 121;
+    private static final int AUDIO_FOLDER = 122;
+    private static final int AUDIO_FOLDER_ID = 123;
 
     private static final int VIDEO_MEDIA = 200;
     private static final int VIDEO_MEDIA_ID = 201;
@@ -5578,6 +5594,8 @@ public class MediaProvider extends ContentProvider {
         URI_MATCHER.addURI("media", "*/audio/albumart", AUDIO_ALBUMART);
         URI_MATCHER.addURI("media", "*/audio/albumart/#", AUDIO_ALBUMART_ID);
         URI_MATCHER.addURI("media", "*/audio/media/#/albumart", AUDIO_ALBUMART_FILE_ID);
+        URI_MATCHER.addURI("media", "*/audio/folder", AUDIO_FOLDER);
+        URI_MATCHER.addURI("media", "*/audio/folder/#", AUDIO_FOLDER_ID);
 
         URI_MATCHER.addURI("media", "*/video/media", VIDEO_MEDIA);
         URI_MATCHER.addURI("media", "*/video/media/#", VIDEO_MEDIA_ID);
