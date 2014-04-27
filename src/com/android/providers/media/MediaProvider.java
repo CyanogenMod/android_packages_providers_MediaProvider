@@ -5256,14 +5256,17 @@ public class MediaProvider extends ContentProvider {
             } else if (EXTERNAL_VOLUME.equals(volume)) {
                 if (Environment.isExternalStorageRemovable()) {
                     final StorageVolume actualVolume = mStorageManager.getPrimaryVolume();
-                    String path = mExternalStoragePaths[0];
                     int volumeId = actualVolume.getFatVolumeId();
 
                     // In case of a non-FAT filesystem, try to get the UUID
                     if (volumeId == -1) {
-                        volumeId = FileUtils.getVolumeUUID(path);
-                        // if (LOCAL_LOGV) Log.v(TAG, path + " UUID: " + volumeID);
-                        Log.e(TAG, path + " UUID: " + volumeId);
+                        String uuid = actualVolume.getUuid();
+                        uuid = uuid.replace("-", "");
+                        if (uuid.length() > 8) {
+                            uuid = uuid.substring(0, 8);
+                        }
+                        volumeId = (int)Long.parseLong(uuid, 16);
+                        Log.e(TAG, "UUID: " + volumeId);
                     }
 
                     // Must check for failure!
