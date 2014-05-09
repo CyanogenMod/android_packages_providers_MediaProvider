@@ -2626,6 +2626,12 @@ public class MediaProvider extends ContentProvider {
                         .rawQuery(
                                 "SELECT count(*),_id,_data,parent FROM files WHERE is_music = 1 GROUP BY parent",
                                 null);
+                if (folderList != null) {
+                    String nonotify = uri.getQueryParameter("nonotify");
+                    if (nonotify == null || !nonotify.equals("1")) {
+                        folderList.setNotificationUri(getContext().getContentResolver(), uri);
+                    }
+                }
                 return folderList;
             case AUDIO_FOLDER_ID:
                 String parent = uri.getPathSegments().get(3);
@@ -2634,6 +2640,12 @@ public class MediaProvider extends ContentProvider {
                                 +
                                 "WHERE is_music = 1 AND parent = '" + parent +
                                 "' AND files.artist_id = artists.artist_id", null);
+                if (musicInFolder != null) {
+                    String nonotify = uri.getQueryParameter("nonotify");
+                    if (nonotify == null || !nonotify.equals("1")) {
+                        musicInFolder.setNotificationUri(getContext().getContentResolver(), uri);
+                    }
+                }
                 return musicInFolder;
 
             case AUDIO_SEARCH_LEGACY:
