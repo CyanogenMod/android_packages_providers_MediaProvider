@@ -5273,12 +5273,14 @@ public class MediaProvider extends ContentProvider {
                     // In case of a non-FAT filesystem, try to get the UUID
                     if (volumeId == -1) {
                         String uuid = actualVolume.getUuid();
-                        uuid = uuid.replace("-", "");
-                        if (uuid.length() > 8) {
-                            uuid = uuid.substring(0, 8);
+                        if (uuid != null) {
+                            uuid = uuid.replace("-", "");
+                            if (uuid.length() > 8) {
+                                uuid = uuid.substring(0, 8);
+                            }
+                            volumeId = (int)Long.parseLong(uuid, 16);
+                            Log.e(TAG, "UUID: " + volumeId);
                         }
-                        volumeId = (int)Long.parseLong(uuid, 16);
-                        Log.e(TAG, "UUID: " + volumeId);
                     }
 
                     // Must check for failure!
