@@ -17,6 +17,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="uid_label">Medien</string>
   <string name="app_label">Mediespäicher</string>
+  <string name="artist_label">Kënschtler</string>
   <string name="ringtone_default">Standard-Schelltoun</string>
   <string name="notification_sound_default">Standard-Notifikatiounstoun</string>
   <string name="alarm_sound_default">Standard-Weckertoun</string>
