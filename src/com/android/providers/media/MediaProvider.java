@@ -2621,32 +2621,21 @@ public class MediaProvider extends ContentProvider {
                 qb.appendWhere("album_id=?");
                 prependArgs.add(uri.getPathSegments().get(3));
                 break;
+
             case AUDIO_FOLDER:
-                Cursor folderList = db
-                        .rawQuery(
-                                "SELECT count(*),_id,_data,parent FROM files WHERE is_music = 1 GROUP BY parent",
-                                null);
-                if (folderList != null) {
-                    String nonotify = uri.getQueryParameter("nonotify");
-                    if (nonotify == null || !nonotify.equals("1")) {
-                        folderList.setNotificationUri(getContext().getContentResolver(), uri);
-                    }
-                }
-                return folderList;
+                qb.setTables("files");
+                qb.appendWhere("is_music=1");
+                projectionIn[0] = "count(*),_id,_data,parent";
+                groupBy = "parent";
+                break;
+
             case AUDIO_FOLDER_ID:
-                String parent = uri.getPathSegments().get(3);
-                Cursor musicInFolder = db.rawQuery(
-                        "SELECT artists.artist,_id,is_music,parent,title,album,duration FROM files,artists "
-                                +
-                                "WHERE is_music = 1 AND parent = '" + parent +
-                                "' AND files.artist_id = artists.artist_id", null);
-                if (musicInFolder != null) {
-                    String nonotify = uri.getQueryParameter("nonotify");
-                    if (nonotify == null || !nonotify.equals("1")) {
-                        musicInFolder.setNotificationUri(getContext().getContentResolver(), uri);
-                    }
-                }
-                return musicInFolder;
+                qb.setTables("files,artists");
+                qb.appendWhere("is_music=1");
+                qb.appendWhere("parent=?");
+                prependArgs.add(uri.getPathSegments().get(3));
+                qb.appendWhere("files.artist_id = artists.artist_id");
+                break;
 
             case AUDIO_SEARCH_LEGACY:
                 Log.w(TAG, "Legacy media search Uri used. Please update your code.");
