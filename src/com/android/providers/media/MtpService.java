@@ -115,6 +115,7 @@ public class MtpService extends Service {
     /** Flag indicating if MTP is disabled due to keyguard */
     private boolean mMtpDisabled;
     private boolean mPtpMode;
+    private boolean mAllowMtp;
     private final HashMap<String, StorageVolume> mVolumeMap = new HashMap<String, StorageVolume>();
     private final HashMap<String, MtpStorage> mStorageMap = new HashMap<String, MtpStorage>();
     private StorageVolume[] mVolumes;
@@ -253,16 +254,17 @@ public class MtpService extends Service {
     }
 
     private void addStorageLocked(StorageVolume volume) {
-        MtpStorage storage = new MtpStorage(volume, getApplicationContext());
-        String path = storage.getPath();
-        mStorageMap.put(path, storage);
+        if (volume.isMtpEnabled()) {
+            MtpStorage storage = new MtpStorage(volume, getApplicationContext());
+            String path = storage.getPath();
+            mStorageMap.put(path, storage);
 
-        Log.d(TAG, "addStorageLocked " + storage.getStorageId() + " " + path);
-        if (mDatabase != null) {
-            mDatabase.addStorage(storage);
-        }
-        if (mServer != null) {
-            mServer.addStorage(storage);
+            if (mDatabase != null) {
+                mDatabase.addStorage(storage);
+            }
+            if (mServer != null) {
+               mServer.addStorage(storage);
+            }
         }
     }
 
