@@ -15,14 +15,14 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-  <string name="uid_label">Medien</string>
-  <string name="app_label">Mediespäicher</string>
-  <string name="upgrade_msg">Medien-Datebank gëtt aktualiséiert.</string>
-  <string name="artist_label">Kënschtler</string>
-  <string name="ringtone_default">Standard-Schelltoun</string>
-  <string name="notification_sound_default">Standard-Notifikatiounstoun</string>
-  <string name="alarm_sound_default">Standard-Weckertoun</string>
-  <string name="root_images">Biller</string>
-  <string name="root_videos">Videoen</string>
-  <string name="root_audio">Audio</string>
+  <string name="uid_label">ۋاسىتە</string>
+  <string name="app_label">ۋاسىتە ساقلىغۇچ</string>
+  <string name="upgrade_msg">ۋاسىتە ساندانىنى يۈكسەلدۈرۈۋاتىدۇ.</string>
+  <string name="artist_label">سەنئەتكار</string>
+  <string name="ringtone_default">كۆڭۈلدىكى قوڭغۇراق ئاۋازى</string>
+  <string name="notification_sound_default">كۆڭۈلدىكى ئۇقتۇرۇش ئاۋازى</string>
+  <string name="alarm_sound_default">كۆڭۈلدىكى قوڭغۇراق ئاۋازى</string>
+  <string name="root_images">سۈرەتلەر</string>
+  <string name="root_videos">سىنلار</string>
+  <string name="root_audio">ئۈن</string>
 </resources>
