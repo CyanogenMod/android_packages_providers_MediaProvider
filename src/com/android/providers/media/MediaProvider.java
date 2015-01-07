@@ -5002,13 +5002,17 @@ public class MediaProvider extends ContentProvider {
 
     private ParcelFileDescriptor getThumb(DatabaseHelper helper, SQLiteDatabase db, String path,
             long album_id, Uri albumart_uri) {
-        ThumbData d = new ThumbData();
-        d.helper = helper;
-        d.db = db;
-        d.path = path;
-        d.album_id = album_id;
-        d.albumart_uri = albumart_uri;
-        return makeThumbInternal(d);
+        if (helper != null && db != null && path != null) {
+            ThumbData d = new ThumbData();
+            d.helper = helper;
+            d.db = db;
+            d.path = path;
+            d.album_id = album_id;
+            d.albumart_uri = albumart_uri;
+            return makeThumbInternal(d);
+        } else {
+            return null;
+        }
     }
 
     private ParcelFileDescriptor makeThumbInternal(ThumbData d) {
