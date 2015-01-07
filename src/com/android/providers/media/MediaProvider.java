@@ -4560,7 +4560,9 @@ public class MediaProvider extends ContentProvider {
                         pfd = openFileAndEnforcePathPermissionsHelper(newUri, mode);
                     } catch (FileNotFoundException ex) {
                         // That didn't work, now try to get it from the specific file
-                        pfd = getThumb(database, db, audiopath, albumid, null);
+                        if (audiopath != null) {
+                            pfd = getThumb(database, db, audiopath, albumid, null);
+                        }
                     }
                 }
             } finally {
@@ -4598,7 +4600,9 @@ public class MediaProvider extends ContentProvider {
                 try {
                     if (c.moveToFirst()) {
                         String audiopath = c.getString(0);
-                        pfd = getThumb(database, db, audiopath, albumid, uri);
+                        if (audiopath != null) {
+                            pfd = getThumb(database, db, audiopath, albumid, uri);
+                        }
                     }
                 } finally {
                     IoUtils.closeQuietly(c);
