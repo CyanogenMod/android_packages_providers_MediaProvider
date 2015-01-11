@@ -19,10 +19,6 @@
   <string name="app_label">ۋاسىتە ساقلىغۇچ</string>
   <string name="upgrade_msg">ۋاسىتە ساندانىنى يۈكسەلدۈرۈۋاتىدۇ.</string>
   <string name="artist_label">سەنئەتكار</string>
-  <string name="ringtone_default">كۆڭۈلدىكى قوڭغۇراق ئاۋازى</string>
-  <string name="notification_sound_default">كۆڭۈلدىكى ئۇقتۇرۇش ئاۋازى</string>
   <string name="alarm_sound_default">كۆڭۈلدىكى قوڭغۇراق ئاۋازى</string>
   <string name="root_images">سۈرەتلەر</string>
-  <string name="root_videos">سىنلار</string>
-  <string name="root_audio">ئۈن</string>
 </resources>

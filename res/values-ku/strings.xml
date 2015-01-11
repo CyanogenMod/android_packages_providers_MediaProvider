@@ -15,12 +15,9 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-  <string name="uid_label">ڕاگه‌یێنه‌کان</string>
   <string name="app_label">بیرگەی ڕاگەیانەکان</string>
   <string name="upgrade_msg">تازەکردنەوەی داتابەیزی ڕاگەیەنەکان</string>
   <string name="artist_label">هونەرمەند</string>
-  <string name="ringtone_default">زەنگی بنەڕەتی</string>
-  <string name="notification_sound_default">دەنگی ئاگادارکردنەوەی بنەڕەت</string>
   <string name="alarm_sound_default">دەنگی کاژێری بنەڕەتی</string>
   <string name="root_images">وێنەکان</string>
   <string name="root_videos">ڤیدیۆکان</string>
