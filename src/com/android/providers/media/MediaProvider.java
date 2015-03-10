@@ -441,6 +441,15 @@ public class MediaProvider extends ContentProvider {
 
             // delete least recently used databases if we are over the limit
             String[] databases = mContext.databaseList();
+            // Don't delete wal auxiliary files(db-shm and db-wal) directly because db file may
+            // not be deleted, and it will cause Disk I/O error when accessing this database.
+            List<String> dbList = new ArrayList<String>();
+            for (String database : databases) {
+                if (database != null && database.endsWith(".db")) {
+                    dbList.add(database);
+                }
+            }
+            databases = dbList.toArray(new String[0]);
             int count = databases.length;
             int limit = MAX_EXTERNAL_DATABASES;
 
@@ -610,24 +619,26 @@ public class MediaProvider extends ContentProvider {
                         Log.w(TAG, "Have message but no request?");
                     } else {
                         try {
-                            File origFile = new File(mCurrentThumbRequest.mPath);
-                            if (origFile.exists() && origFile.length() > 0) {
-                                mCurrentThumbRequest.execute();
-                                // Check if more requests for the same image are queued.
-                                synchronized (mMediaThumbQueue) {
-                                    for (MediaThumbRequest mtq : mMediaThumbQueue) {
-                                        if ((mtq.mOrigId == mCurrentThumbRequest.mOrigId) &&
-                                            (mtq.mIsVideo == mCurrentThumbRequest.mIsVideo) &&
-                                            (mtq.mMagic == 0) &&
-                                            (mtq.mState == MediaThumbRequest.State.WAIT)) {
-                                            mtq.mMagic = mCurrentThumbRequest.mMagic;
+                            if (mCurrentThumbRequest.mPath != null) {
+                                File origFile = new File(mCurrentThumbRequest.mPath);
+                                if (origFile.exists() && origFile.length() > 0) {
+                                    mCurrentThumbRequest.execute();
+                                    // Check if more requests for the same image are queued.
+                                    synchronized (mMediaThumbQueue) {
+                                        for (MediaThumbRequest mtq : mMediaThumbQueue) {
+                                            if ((mtq.mOrigId == mCurrentThumbRequest.mOrigId) &&
+                                                (mtq.mIsVideo == mCurrentThumbRequest.mIsVideo) &&
+                                                (mtq.mMagic == 0) &&
+                                                (mtq.mState == MediaThumbRequest.State.WAIT)) {
+                                                mtq.mMagic = mCurrentThumbRequest.mMagic;
+                                            }
                                         }
                                     }
-                                }
-                            } else {
-                                // original file hasn't been stored yet
-                                synchronized (mMediaThumbQueue) {
-                                    Log.w(TAG, "original file hasn't been stored yet: " + mCurrentThumbRequest.mPath);
+                                } else {
+                                    // original file hasn't been stored yet
+                                    synchronized (mMediaThumbQueue) {
+                                        Log.w(TAG, "original file hasn't been stored yet: " + mCurrentThumbRequest.mPath);
+                                    }
                                 }
                             }
                         } catch (IOException ex) {
@@ -1858,6 +1869,16 @@ public class MediaProvider extends ContentProvider {
                     + " AND datetaken<date_modified*5;");
         }
 
+       if (fromVersion < 800) {
+            // Delete albums and artists, then clear the modification time on songs, which
+            // will cause the media scanner to rescan everything, rebuilding the artist and
+            // album tables along the way, while preserving playlists.
+            // We need this rescan because ICU also changed, and now generates different
+            // collation keys
+            db.execSQL("DELETE from albums");
+            db.execSQL("DELETE from artists");
+            db.execSQL("UPDATE files SET date_modified=0;");
+        }
 
         sanityCheck(db, fromVersion);
         long elapsedSeconds = (SystemClock.currentTimeMicro() - startTime) / 1000000;
