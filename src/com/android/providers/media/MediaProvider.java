@@ -423,13 +423,15 @@ public class MediaProvider extends ContentProvider {
         @Override
         public void onOpen(SQLiteDatabase db) {
 
-            if (mInternal) return;  // The internal database is kept separately.
-
-            if (mEarlyUpgrade) return; // Doing early upgrade.
-
             if (mObjectRemovedCallback != null) {
                 db.addCustomFunction("_OBJECT_REMOVED", 1, mObjectRemovedCallback);
             }
+
+            if (mEarlyUpgrade) return; // Doing early upgrade.
+
+            onOpenSanityCheck(db);
+
+            if (mInternal) return;  // The internal database is kept separately.
 
             // the code below is only needed on devices with removable storage
             if (!Environment.isExternalStorageRemovable()) return;
@@ -1913,6 +1915,18 @@ public class MediaProvider extends ContentProvider {
         } finally {
             IoUtils.closeQuietly(c1);
             IoUtils.closeQuietly(c2);
+        }
+    }
+    private static void onOpenSanityCheck(SQLiteDatabase db){
+	try{
+            // If for some unknown reason the deletion of the entries wasn't done in the mUnmountReceiver
+            // then we have some entries with no _data. 
+            // The only allowed entries in this case are the MEDIA_TYPE_PLAYLIST so do some cleanup in here,
+            // otherwise the mediascanner will add a new entry with a valid _data and we'll get some duplicates,
+            // and crashes when accessing NULL _data files
+            db.execSQL("DELETE FROM files where (_data is NULL AND media_type != " + FileColumns.MEDIA_TYPE_PLAYLIST + ");");
+        } finally{
+            //nothing to do
         }
     }
 
