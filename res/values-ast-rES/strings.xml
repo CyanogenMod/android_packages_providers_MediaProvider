@@ -17,7 +17,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="uid_label">Multimedia</string>
   <string name="app_label">Almacenamientu multimedia</string>
-  <string name="upgrade_msg">Anovando base de datos multimedia.</string>
   <string name="artist_label">Artista</string>
   <string name="ringtone_default">Tonu predetermináu</string>
   <string name="notification_sound_default">Soníu de notificación predetermináu</string>

@@ -17,7 +17,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="uid_label">ڕەنگاڵە</string>
   <string name="app_label">بیرگەی ڕاگەیانەکان</string>
-  <string name="upgrade_msg">تازەکردنەوەی داتابەیزی ڕاگەیەنەکان</string>
   <string name="artist_label">هونەرمەند</string>
   <string name="ringtone_default">زەنگی بنەڕەتی</string>
   <string name="notification_sound_default">دەنگی ئاگادارکردنەوەی بنەڕەت</string>
