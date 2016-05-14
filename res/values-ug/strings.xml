@@ -15,9 +15,19 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <!-- Label to show to user for all apps using this UID. -->
   <string name="uid_label">ۋاسىتە</string>
+  <!-- Label to show to user for this package. -->
   <string name="app_label">ۋاسىتە ساقلىغۇچ</string>
+  <!-- Description line for music artists in the search/suggestion results -->
   <string name="artist_label">سەنئەتكار</string>
+  <!-- Choice in the ringtone picker.  If chosen, the default ringtone will be used. -->
+  <!-- Choice in the notification sound picker.  If chosen, the default notification sound will be
+         used. -->
+  <!-- Choice in the alarm sound picker.  If chosen, the default alarm sound will be used. -->
   <string name="alarm_sound_default">كۆڭۈلدىكى قوڭغۇراق ئاۋازى</string>
+  <!-- Title for documents backend that offers images. [CHAR LIMIT=24] -->
   <string name="root_images">سۈرەتلەر</string>
+  <!-- Title for documents backend that offers videos. [CHAR LIMIT=24] -->
+  <!-- Title for documents backend that offers audio. [CHAR LIMIT=24] -->
 </resources>
