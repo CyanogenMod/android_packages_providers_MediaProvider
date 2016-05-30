@@ -4688,14 +4688,6 @@ public class MediaProvider extends ContentProvider {
                         if (data == null) {
                             throw new FileNotFoundException("Null path for " + uri);
                         }
-                        File directory = new File(data).getParentFile();
-                        if (!directory.isDirectory()) {
-                            if (!directory.mkdirs()) {
-                                Log.e(TAG, "Unable to create .thumbnails directory for " + data);
-                                throw new FileNotFoundException(
-                                        "Unable to create .thumbnails directory " + uri);
-                            }
-                        }
                         return new File(data);
                     } else {
                         throw new FileNotFoundException("Unable to read entry for " + uri);
