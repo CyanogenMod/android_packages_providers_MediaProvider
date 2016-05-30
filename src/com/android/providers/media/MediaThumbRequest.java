@@ -142,8 +142,9 @@ class MediaThumbRequest {
     void execute() throws IOException {
         MiniThumbFile miniThumbFile = MiniThumbFile.instance(mUri);
         long magic = mMagic;
+        //to create the .thumbnail dir
+        long fileMagic = miniThumbFile.getMagic(mOrigId);
         if (magic != 0) {
-            long fileMagic = miniThumbFile.getMagic(mOrigId);
             if (fileMagic == magic) {
                 Cursor c = null;
                 ParcelFileDescriptor pfd = null;
