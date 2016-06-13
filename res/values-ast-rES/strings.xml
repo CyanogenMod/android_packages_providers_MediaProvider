@@ -15,14 +15,25 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <!-- Label to show to user for all apps using this UID. -->
   <string name="uid_label">Multimedia</string>
+  <!-- Label to show to user for this package. -->
   <string name="app_label">Almacenamientu multimedia</string>
+  <!-- [CHAR LIMIT=NONE] Boot message while upgrading media provider. -->
   <string name="upgrade_msg">Anovando base de datos multimedia.</string>
+  <!-- Description line for music artists in the search/suggestion results -->
   <string name="artist_label">Artista</string>
+  <!-- Choice in the ringtone picker.  If chosen, the default ringtone will be used. -->
   <string name="ringtone_default">Tonu predetermináu</string>
+  <!-- Choice in the notification sound picker.  If chosen, the default notification sound will be
+         used. -->
   <string name="notification_sound_default">Soníu de notificación predetermináu</string>
+  <!-- Choice in the alarm sound picker.  If chosen, the default alarm sound will be used. -->
   <string name="alarm_sound_default">Soníu d\'alarma predetermináu</string>
+  <!-- Title for documents backend that offers images. [CHAR LIMIT=24] -->
   <string name="root_images">Imáxenes</string>
+  <!-- Title for documents backend that offers videos. [CHAR LIMIT=24] -->
   <string name="root_videos">Vídeos</string>
+  <!-- Title for documents backend that offers audio. [CHAR LIMIT=24] -->
   <string name="root_audio">Audiu</string>
 </resources>
