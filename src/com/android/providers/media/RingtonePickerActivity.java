@@ -22,6 +22,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.content.res.Resources.Theme;
 import android.database.Cursor;
+import android.database.StaleDataException;
 import android.media.AudioAttributes;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -356,7 +357,14 @@ public final class RingtonePickerActivity extends AlertActivity implements
             ringtone = mDefaultRingtone;
             mCurrentRingtone = null;
         } else {
-            ringtone = mRingtoneManager.getRingtone(getRingtoneManagerPosition(mSampleRingtonePos));
+            try {
+               ringtone =mRingtoneManager.getRingtone(
+                          getRingtoneManagerPosition(mSampleRingtonePos));
+            } catch (StaleDataException staleDataException) {
+               ringtone = null;
+            } catch (IllegalStateException illegalStateException) {
+               ringtone = null;
+            }
             mCurrentRingtone = ringtone;
         }
 
