@@ -340,6 +340,7 @@ public final class RingtonePickerActivity extends AlertActivity implements
     @Override
     protected void onStop() {
         super.onStop();
+        mHandler.removeCallbacks(this);
         mCursor.deactivate();
 
         if (!isChangingConfigurations()) {
