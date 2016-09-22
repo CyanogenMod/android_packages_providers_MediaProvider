@@ -19,6 +19,7 @@ package com.android.providers.media;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.StaleDataException;
 import android.media.AudioAttributes;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -322,7 +323,14 @@ public final class RingtonePickerActivity extends AlertActivity implements
             ringtone = mDefaultRingtone;
             mCurrentRingtone = null;
         } else {
-            ringtone = mRingtoneManager.getRingtone(getRingtoneManagerPosition(mSampleRingtonePos));
+            try {
+               ringtone =mRingtoneManager.getRingtone(
+                          getRingtoneManagerPosition(mSampleRingtonePos));
+            } catch (StaleDataException staleDataException) {
+               ringtone = null;
+            } catch (IllegalStateException illegalStateException) {
+               ringtone = null;
+            }
             mCurrentRingtone = ringtone;
         }
 
@@ -340,6 +348,7 @@ public final class RingtonePickerActivity extends AlertActivity implements
     @Override
     protected void onStop() {
         super.onStop();
+        mHandler.removeCallbacks(this);
         mCursor.deactivate();
 
         if (!isChangingConfigurations()) {
