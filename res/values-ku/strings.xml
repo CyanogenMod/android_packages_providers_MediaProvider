@@ -16,15 +16,24 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <!-- Label to show to user for all apps using this UID. -->
+  <string name="uid_label">ڕەنگاڵە</string>
   <!-- Label to show to user for this package. -->
+  <string name="app_label">بیرگەی ڕاگەیانەکان</string>
   <!-- Description line for music artists in the search/suggestion results -->
+  <string name="artist_label">هونەرمەند</string>
   <!-- Choice in the ringtone picker.  If chosen, the default ringtone will be used. -->
+  <string name="ringtone_default">زەنگی بنەڕەتی</string>
   <!-- Choice in the notification sound picker.  If chosen, the default notification sound will be
          used. -->
+  <string name="notification_sound_default">دەنگی ئاگادارکردنەوەی بنەڕەت</string>
   <!-- Choice in the alarm sound picker.  If chosen, the default alarm sound will be used. -->
+  <string name="alarm_sound_default">دەنگی کاژێری بنەڕەتی</string>
   <!-- Title for documents backend that offers images. [CHAR LIMIT=24] -->
+  <string name="root_images">وێنەکان</string>
   <!-- Title for documents backend that offers videos. [CHAR LIMIT=24] -->
+  <string name="root_videos">ڤیدیۆکان</string>
   <!-- Title for documents backend that offers audio. [CHAR LIMIT=24] -->
+  <string name="root_audio">دەنگ</string>
   <!-- Strings of localized sound names below:
          VERY IMPORTANT: the lower case version of the names must match the resource
                          name as extracted from the metadata or the file name, all
@@ -32,24 +41,15 @@
                          resource name is preceded by "sound_name_".
     -->
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:ambient tempo:flowing -->
-  <string name="sound_name_awaken">Probuđen</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:soft pure tones
          tempo:initially downtempo -->
-  <string name="sound_name_bounce">Odskakanje</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:traditional tempo:mid -->
-  <string name="sound_name_drip">Kapanje</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:rhythmic tempo:up-tempo -->
-  <string name="sound_name_gallop">Galop</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:traditional tempo:mid -->
-  <string name="sound_name_nudge">Gurkanje</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:traditional tempo:mid -->
-  <string name="sound_name_orbit">Kruženje</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:digital tempo:mid -->
-  <string name="sound_name_rise">Uspon</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:musical tempo:swaying -->
-  <string name="sound_name_sway">Njihanje</string>
   <!-- Name of alarm in the alarm sound picker: theme:motion, style:sound design tempo:mid -->
-  <string name="sound_name_wag">Klaćenje</string>
   <!--  When adding sounds as overlays, you can use the resources defined below.
           For the translation of the names to be picked up by the RingtonePicker:
           - in the sound files, set the "TITLE" tag as "alarm_XX" or "notification_XX"
