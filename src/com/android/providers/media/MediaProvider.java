@@ -59,6 +59,7 @@ import android.media.MiniThumbFile;
 import android.mtp.MtpConstants;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -241,6 +242,17 @@ public class MediaProvider extends ContentProvider {
         Playlists.Members.PLAYLIST_ID,
         Playlists.Members.PLAY_ORDER
     };
+
+    private static final String[] sDataId = new String[] {
+        FileColumns.DATA,
+        FileColumns._ID
+    };
+
+    private static final String ID_NOT_PARENT_CLAUSE =
+            "_id NOT IN (SELECT parent FROM files)";
+
+    private static final String PARENT_NOT_PRESENT_CLAUSE =
+            "parent != 0 AND parent NOT IN (SELECT _id FROM files)";
 
     private Uri mAlbumArtBaseUri = Uri.parse("content://media/external/audio/albumart");
 
@@ -3041,34 +3053,36 @@ public class MediaProvider extends ContentProvider {
                     return 0;
                 }
             }
-            Long cid = mDirectoryCache.get(parentPath);
-            if (cid != null) {
-                if (LOCAL_LOGV) Log.v(TAG, "Returning cached entry for " + parentPath);
-                return cid;
-            }
-
-            String selection = MediaStore.MediaColumns.DATA + "=?";
-            String [] selargs = { parentPath };
-            helper.mNumQueries++;
-            Cursor c = db.query("files", sIdOnlyColumn, selection, selargs, null, null, null);
-            try {
-                long id;
-                if (c == null || c.getCount() == 0) {
-                    // parent isn't in the database - so add it
-                    id = insertDirectory(helper, db, parentPath);
-                    if (LOCAL_LOGV) Log.v(TAG, "Inserted " + parentPath);
-                } else {
-                    if (c.getCount() > 1) {
-                        Log.e(TAG, "more than one match for " + parentPath);
-                    }
-                    c.moveToFirst();
-                    id = c.getLong(0);
-                    if (LOCAL_LOGV) Log.v(TAG, "Queried " + parentPath);
+            synchronized(mDirectoryCache) {
+                Long cid = mDirectoryCache.get(parentPath);
+                if (cid != null) {
+                    if (LOCAL_LOGV) Log.v(TAG, "Returning cached entry for " + parentPath);
+                    return cid;
                 }
-                mDirectoryCache.put(parentPath, id);
-                return id;
-            } finally {
-                IoUtils.closeQuietly(c);
+
+                String selection = MediaStore.MediaColumns.DATA + "=?";
+                String [] selargs = { parentPath };
+                helper.mNumQueries++;
+                Cursor c = db.query("files", sIdOnlyColumn, selection, selargs, null, null, null);
+                try {
+                    long id;
+                    if (c == null || c.getCount() == 0) {
+                        // parent isn't in the database - so add it
+                        id = insertDirectory(helper, db, parentPath);
+                        if (LOCAL_LOGV) Log.v(TAG, "Inserted " + parentPath);
+                    } else {
+                        if (c.getCount() > 1) {
+                            Log.e(TAG, "more than one match for " + parentPath);
+                        }
+                        c.moveToFirst();
+                        id = c.getLong(0);
+                        if (LOCAL_LOGV) Log.v(TAG, "Queried " + parentPath);
+                    }
+                    mDirectoryCache.put(parentPath, id);
+                    return id;
+                } finally {
+                    IoUtils.closeQuietly(c);
+                }
             }
         } else {
             return 0;
@@ -3231,6 +3245,10 @@ public class MediaProvider extends ContentProvider {
                 format = MediaFile.getFormatCode(path, mimeType);
             }
         }
+        if (path != null && path.endsWith("/")) {
+            Log.e(TAG, "directory has trailing slash: " + path);
+            return 0;
+        }
         if (format != 0) {
             values.put(FileColumns.FORMAT, format);
             if (mimeType == null) {
@@ -3238,7 +3256,7 @@ public class MediaProvider extends ContentProvider {
             }
         }
 
-        if (mimeType == null && path != null) {
+        if (mimeType == null && path != null && format != MtpConstants.FORMAT_ASSOCIATION) {
             mimeType = MediaFile.getMimeTypeForFile(path);
         }
         if (mimeType != null) {
@@ -3318,7 +3336,9 @@ public class MediaProvider extends ContentProvider {
                     new String[] { Long.toString(rowId) });
         }
         if (format == MtpConstants.FORMAT_ASSOCIATION) {
-            mDirectoryCache.put(path, rowId);
+            synchronized(mDirectoryCache) {
+                mDirectoryCache.put(path, rowId);
+            }
         }
 
         return rowId;
@@ -3678,6 +3698,8 @@ public class MediaProvider extends ContentProvider {
                                 mMtpServiceConnection, Context.BIND_AUTO_CREATE);
                     }
                 }
+                fixParentIdIfNeeded();
+
                 break;
 
             case FILES:
@@ -3713,6 +3735,76 @@ public class MediaProvider extends ContentProvider {
             processNewNoMediaPath(helper, db, path);
         }
         return newUri;
+    }
+
+    private void fixParentIdIfNeeded() {
+        final DatabaseHelper helper = getDatabaseForUri(Uri.parse("content://media/external/file"));
+        if (helper == null) {
+            if (LOCAL_LOGV) Log.v(TAG, "fixParentIdIfNeeded: helper is null, nothing to fix!");
+            return;
+        }
+
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+        long lastId = -1;
+        int numFound = 0, numFixed = 0;
+        boolean firstIteration = true;
+        while (true) {
+            // Run a query for any entry with an invalid parent id, and try to fix it up.
+            // Limit to 500 rows so that the query results fit in the cursor window. Otherwise
+            // the query could be re-run at some point to get the next results, but since we
+            // already updated some rows, this could go out of bounds or skip some rows.
+            // Order by _id, and do not query what we've already processed.
+            Cursor c = db.query("files", sDataId, PARENT_NOT_PRESENT_CLAUSE +
+                    (lastId < 0 ? "" : " AND _id > " + lastId),
+                    null, null, null, "_id ASC", "500");
+
+            try {
+                if (c == null || c.getCount() == 0) {
+                    break;
+                }
+
+                numFound += c.getCount();
+                if (firstIteration) {
+                    synchronized(mDirectoryCache) {
+                        mDirectoryCache.clear();
+                    }
+                    firstIteration = false;
+                }
+                while (c.moveToNext()) {
+                    final String path = c.getString(0);
+                    lastId = c.getLong(1);
+
+                    File file = new File(path);
+                    if (file.exists()) {
+                        // If the file actually exists, try to fix up the parent id.
+                        // getParent() will add entries for any missing ancestors.
+                        long parentId = getParent(helper, db, path);
+                        if (LOCAL_LOGV) Log.d(TAG,
+                                "changing parent to " + parentId + " for " + path);
+
+                        ContentValues values = new ContentValues();
+                        values.put(FileColumns.PARENT, parentId);
+                        int numrows = db.update("files", values, "_id=" + lastId, null);
+                        helper.mNumUpdates += numrows;
+                        numFixed += numrows;
+                    } else {
+                        // If the file does not exist, remove the entry now
+                        if (LOCAL_LOGV) Log.d(TAG, "removing " + path);
+                        db.delete("files", "_id=" + lastId, null);
+                    }
+                }
+            } finally {
+                IoUtils.closeQuietly(c);
+            }
+        }
+        if (numFound > 0) {
+            Log.d(TAG, "fixParentIdIfNeeded: found: " + numFound + ", fixed: " + numFixed);
+        }
+        if (numFixed > 0) {
+            ContentResolver res = getContext().getContentResolver();
+            res.notifyChange(Uri.parse("content://media/"), null);
+        }
     }
 
     /*
@@ -3768,10 +3860,15 @@ public class MediaProvider extends ContentProvider {
         // a nomedia path was removed, so clear the nomedia paths
         MediaScanner.clearMediaPathCache(false /* media */, true /* nomedia */);
         final DatabaseHelper helper;
-        if (path.startsWith(mExternalStoragePaths[0])) {
-            helper = getDatabaseForUri(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
-        } else {
+        String[] internalPaths = new String[] {
+            Environment.getRootDirectory() + "/media",
+            Environment.getOemDirectory() + "/media",
+        };
+
+        if (path.startsWith(internalPaths[0]) || path.startsWith(internalPaths[1])) {
             helper = getDatabaseForUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI);
+        } else {
+            helper = getDatabaseForUri(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
         }
         SQLiteDatabase db = helper.getWritableDatabase();
         new ScannerClient(getContext(), db, path);
@@ -4080,6 +4177,15 @@ public class MediaProvider extends ContentProvider {
                 String msg = dump(database, false);
                 logToDb(database.getWritableDatabase(), msg);
             }
+            if (INTERNAL_VOLUME.equals(mMediaScannerVolume)) {
+                // persist current build fingerprint as fingerprint for system (internal) sound scan
+                final SharedPreferences scanSettings =
+                        getContext().getSharedPreferences(MediaScanner.SCANNED_BUILD_PREFS_NAME,
+                                Context.MODE_PRIVATE);
+                final SharedPreferences.Editor editor = scanSettings.edit();
+                editor.putString(MediaScanner.LAST_INTERNAL_SCAN_FINGERPRINT, Build.FINGERPRINT);
+                editor.apply();
+            }
             mMediaScannerVolume = null;
             return 1;
         }
@@ -4187,6 +4293,16 @@ public class MediaProvider extends ContentProvider {
                         } finally {
                             IoUtils.closeQuietly(c);
                         }
+                    }
+                    // Do not allow deletion if the file/object is referenced as parent
+                    // by some other entries. It could cause database corruption.
+                    if (!TextUtils.isEmpty(sGetTableAndWhereParam.where)) {
+                        sGetTableAndWhereParam.where =
+                                "(" + sGetTableAndWhereParam.where + ")" +
+                                        " AND (_id NOT IN (SELECT parent FROM files" +
+                                        " WHERE NOT (" + sGetTableAndWhereParam.where + ")))";
+                    } else {
+                        sGetTableAndWhereParam.where = ID_NOT_PARENT_CLAUSE;
                     }
                 }
 
@@ -4959,7 +5075,7 @@ public class MediaProvider extends ContentProvider {
             ParcelFileDescriptor pfd = ParcelFileDescriptor.open(f,
                     ParcelFileDescriptor.MODE_READ_ONLY);
 
-            try (MediaScanner scanner = new MediaScanner(context, "internal")) {
+            try (MediaScanner scanner = new MediaScanner(context, INTERNAL_VOLUME)) {
                 compressed = scanner.extractAlbumArt(pfd.getFileDescriptor());
             }
             pfd.close();
