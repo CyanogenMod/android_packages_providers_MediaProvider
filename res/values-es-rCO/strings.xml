@@ -19,13 +19,11 @@
   <!-- Label to show to user for this package. -->
   <!-- [CHAR LIMIT=NONE] Boot message while upgrading media provider. -->
   <!-- Description line for music artists in the search/suggestion results -->
-  <string name="artist_label">Artisto</string>
   <!-- Choice in the ringtone picker.  If chosen, the default ringtone will be used. -->
   <!-- Choice in the notification sound picker.  If chosen, the default notification sound will be
          used. -->
   <!-- Choice in the alarm sound picker.  If chosen, the default alarm sound will be used. -->
   <!-- Title for documents backend that offers images. [CHAR LIMIT=24] -->
-  <string name="root_images">Bildoj</string>
   <!-- Title for documents backend that offers videos. [CHAR LIMIT=24] -->
   <!-- Title for documents backend that offers audio. [CHAR LIMIT=24] -->
 </resources>
